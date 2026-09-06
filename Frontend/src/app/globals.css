@@ -1,6 +1,24 @@
 @import "tailwindcss";
 
 /**
+ * The dark variant must respond to BOTH an explicit user choice (the .dark class
+ * the server sets from the cookie) and, when no choice is stored, the operating
+ * system setting. Tailwind's default dark variant only does the latter, which
+ * would leave dark: utilities out of sync with our themed CSS variables the
+ * moment someone used the toggle.
+ */
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(html:not(.light), html:not(.light) *) {
+      @slot;
+    }
+  }
+}
+
+/**
  * Design tokens.
  *
  * Palette: a deep indigo primary that reads as official without being flat
@@ -74,6 +92,7 @@
   --foreground-subtle: #64748b;
 }
 
+/* Explicit dark choice. */
 .dark {
   --background: #0b1120;
   --surface: #111c33;
@@ -83,6 +102,20 @@
   --foreground: #f1f5f9;
   --foreground-muted: #cbd5e1;
   --foreground-subtle: #94a3b8;
+}
+
+/* No explicit choice stored: follow the operating system setting. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #0b1120;
+    --surface: #111c33;
+    --surface-muted: #16233d;
+    --border: #1e2d4a;
+    --border-strong: #2b3d61;
+    --foreground: #f1f5f9;
+    --foreground-muted: #cbd5e1;
+    --foreground-subtle: #94a3b8;
+  }
 }
 
 @theme inline {

@@ -5,18 +5,25 @@ import { useTheme } from "./ThemeProvider";
 import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/cn";
 
+/**
+ * Both icons are always rendered and CSS decides which is visible. Choosing in
+ * JavaScript would require knowing the resolved theme during the server render,
+ * which is impossible when the preference is "system" — and guessing produces a
+ * hydration mismatch on every load.
+ */
 export function ThemeToggle({ className }: { className?: string }) {
-  const { theme, toggle } = useTheme();
+  const { toggle } = useTheme();
   return (
     <button
       onClick={toggle}
-      aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+      aria-label="Switch between light and dark theme"
       className={cn(
         "inline-flex size-9 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground",
         className,
       )}
     >
-      {theme === "dark" ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
+      <Moon className="size-[18px] dark:hidden" aria-hidden />
+      <Sun className="hidden size-[18px] dark:block" aria-hidden />
     </button>
   );
 }

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { DICTIONARIES, type TranslationKey } from "./dictionaries";
 import type { Language } from "@/schemas";
+import { LANGUAGE_COOKIE } from "@/lib/preferences";
 
 type I18nValue = {
   language: Language;
@@ -11,7 +12,6 @@ type I18nValue = {
 };
 
 const I18nContext = createContext<I18nValue | null>(null);
-export const LANGUAGE_COOKIE = "kky_lang";
 
 /**
  * Language is persisted in a cookie rather than localStorage so the SERVER can

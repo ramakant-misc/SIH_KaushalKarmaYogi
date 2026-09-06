@@ -1,33 +1,43 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { THEME_COOKIE, type ThemePreference } from "@/lib/preferences";
 
-type Theme = "light" | "dark";
-const ThemeContext = createContext<{ theme: Theme; toggle: () => void } | null>(null);
-export const THEME_STORAGE_KEY = "kky.theme";
+const ThemeContext = createContext<{ theme: ThemePreference; toggle: () => void } | null>(null);
 
 /**
- * The blocking script in <head> (see ThemeScript) applies the theme class before
- * the first paint, so there is no flash of the wrong theme. This provider reads
- * back what that script decided instead of deciding again in an effect.
+ * Theme is persisted in a cookie and applied by the SERVER as a class on <html>.
+ *
+ * The obvious alternative — an inline <script> in <head> that reads storage
+ * before hydration — does not work in the App Router: React does not execute
+ * script tags rendered inside components on the client, and hydration then
+ * overwrites <html className>, stripping the class the script had added. Doing
+ * it server-side removes both the flash and the mismatch.
+ *
+ * With no cookie set, no class is emitted and the CSS falls back to
+ * prefers-color-scheme, so a first-time visitor still gets their system theme.
  */
-function readAppliedTheme(): Theme {
-  if (typeof document === "undefined") return "light";
-  return document.documentElement.classList.contains("dark") ? "dark" : "light";
-}
-
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(readAppliedTheme);
+export function ThemeProvider({
+  children,
+  initialTheme = "system",
+}: {
+  children: React.ReactNode;
+  initialTheme?: ThemePreference;
+}) {
+  const [theme, setTheme] = useState<ThemePreference>(initialTheme);
 
   const toggle = useCallback(() => {
     setTheme((current) => {
-      const next = current === "dark" ? "light" : "dark";
-      document.documentElement.classList.toggle("dark", next === "dark");
-      try {
-        window.localStorage.setItem(THEME_STORAGE_KEY, next);
-      } catch {
-        // Storage unavailable (private mode): the theme still applies for this session.
-      }
+      const root = document.documentElement;
+      // From "system", flip to the opposite of what is currently displayed.
+      const showingDark =
+        current === "dark" ||
+        (current === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      const next: ThemePreference = showingDark ? "light" : "dark";
+
+      root.classList.toggle("dark", next === "dark");
+      root.classList.toggle("light", next === "light");
+      document.cookie = `${THEME_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
       return next;
     });
   }, []);
@@ -40,13 +50,4 @@ export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error("useTheme must be used inside ThemeProvider");
   return ctx;
-}
-
-/**
- * Runs before React hydrates. Kept tiny and synchronous on purpose — anything
- * async here reintroduces the flash it exists to prevent.
- */
-export function ThemeScript() {
-  const script = `(function(){try{var s=localStorage.getItem("${THEME_STORAGE_KEY}");var d=s==="dark"||(!s&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()`;
-  return <script dangerouslySetInnerHTML={{ __html: script }} />;
 }

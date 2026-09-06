@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import { Providers } from "@/components/layout/Providers";
-import { ThemeScript } from "@/components/layout/ThemeProvider";
-import { LANGUAGE_COOKIE } from "@/i18n/I18nProvider";
+import { LANGUAGE_COOKIE, THEME_COOKIE, type ThemePreference } from "@/lib/preferences";
 import type { Language } from "@/schemas";
 import "./globals.css";
 
@@ -20,21 +19,30 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  // Read the language server-side so Hindi renders on the first paint, not after it.
+  // Theme and language are read server-side so the first paint is already
+  // correct — no flash, and no hydration mismatch from deciding on the client.
   const cookieStore = await cookies();
-  const stored = cookieStore.get(LANGUAGE_COOKIE)?.value;
-  const language: Language = stored === "hi" ? "hi" : "en";
+
+  const storedLanguage = cookieStore.get(LANGUAGE_COOKIE)?.value;
+  const language: Language = storedLanguage === "hi" ? "hi" : "en";
+
+  const storedTheme = cookieStore.get(THEME_COOKIE)?.value;
+  const theme: ThemePreference =
+    storedTheme === "dark" ? "dark" : storedTheme === "light" ? "light" : "system";
 
   return (
-    <html lang={language} className={`${geistSans.variable} ${geistMono.variable} h-full`} suppressHydrationWarning>
-      <head>
-        <ThemeScript />
-      </head>
+    <html
+      lang={language}
+      // No class when the user has not chosen: the CSS then follows the OS setting.
+      className={`${geistSans.variable} ${geistMono.variable} h-full ${theme === "system" ? "" : theme}`}
+    >
       <body className="flex min-h-full flex-col">
         <a href="#main" className="skip-link rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white">
           Skip to main content
         </a>
-        <Providers initialLanguage={language}>{children}</Providers>
+        <Providers initialLanguage={language} initialTheme={theme}>
+          {children}
+        </Providers>
       </body>
     </html>
   );

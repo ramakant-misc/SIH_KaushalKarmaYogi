@@ -4,14 +4,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { ThemeProvider } from "./ThemeProvider";
+import type { ThemePreference } from "@/lib/preferences";
 import type { Language } from "@/schemas";
 
 export function Providers({
   children,
   initialLanguage,
+  initialTheme,
 }: {
   children: React.ReactNode;
   initialLanguage: Language;
+  initialTheme: ThemePreference;
 }) {
   // Created inside the component so each server request gets its own cache.
   const [queryClient] = useState(
@@ -25,7 +28,7 @@ export function Providers({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      <ThemeProvider initialTheme={initialTheme}>
         <I18nProvider initialLanguage={initialLanguage}>{children}</I18nProvider>
       </ThemeProvider>
     </QueryClientProvider>
