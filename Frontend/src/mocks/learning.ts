@@ -104,10 +104,18 @@ export function buildRecommendations(userId: string): Recommendation[] {
   const enrolled = new Set(buildEnrollments(userId).map((e) => e.refId));
 
   const out: Recommendation[] = [];
+  // A course often advances several competencies, so the same course can be the
+  // best answer to more than one gap. Recommend it once, for the highest-priority
+  // gap it closes — repeating it wastes a slot and duplicates React keys.
+  const alreadyRecommended = new Set<string>();
+
   for (const gap of gaps) {
-    const candidates = coursesForCompetency(gap.competencyKey).filter((c) => !enrolled.has(c.id));
+    const candidates = coursesForCompetency(gap.competencyKey).filter(
+      (c) => !enrolled.has(c.id) && !alreadyRecommended.has(c.id),
+    );
     const course = candidates.find((c) => c.competencies.some((x) => x.competencyKey === gap.competencyKey && x.targetLevel > gap.currentLevel));
     if (!course) continue;
+    alreadyRecommended.add(course.id);
 
     const r = rng(hash(`rec-${userId}-${course.id}`));
     const reasonCodes: Recommendation["reasonCodes"] = ["closes_critical_gap", "role_requirement"];

@@ -71,7 +71,7 @@ export function BarChart({
         {vertical ? (
           <>
             <XAxis type="number" {...axisProps} />
-            <YAxis type="category" dataKey={xKey} width={140} {...axisProps} />
+            <YAxis type="category" dataKey={xKey} width={170} {...axisProps} />
           </>
         ) : (
           <>

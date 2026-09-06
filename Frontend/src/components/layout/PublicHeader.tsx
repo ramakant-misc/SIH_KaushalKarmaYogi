@@ -16,7 +16,13 @@ const LINKS = [
   { href: "/about", key: "nav.about" },
 ] as const;
 
-export function PublicHeader() {
+export function PublicHeader({
+  dashboardHref = null,
+  userName = null,
+}: {
+  dashboardHref?: string | null;
+  userName?: string | null;
+} = {}) {
   const { t } = useT();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -47,9 +53,15 @@ export function PublicHeader() {
         <div className="flex items-center gap-1">
           <LanguageToggle />
           <ThemeToggle />
-          <ButtonLink href="/sign-in" size="sm" className="ml-1 hidden sm:inline-flex">
-            {t("action.signIn")}
-          </ButtonLink>
+          {dashboardHref ? (
+            <ButtonLink href={dashboardHref} size="sm" className="ml-1 hidden sm:inline-flex">
+              {userName ? `${userName.split(" ")[0]}'s dashboard` : t("nav.dashboard")}
+            </ButtonLink>
+          ) : (
+            <ButtonLink href="/sign-in" size="sm" className="ml-1 hidden sm:inline-flex">
+              {t("action.signIn")}
+            </ButtonLink>
+          )}
           <button
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
@@ -77,8 +89,8 @@ export function PublicHeader() {
               </li>
             ))}
             <li className="pt-2">
-              <ButtonLink href="/sign-in" size="sm" className="w-full">
-                {t("action.signIn")}
+              <ButtonLink href={dashboardHref ?? "/sign-in"} size="sm" className="w-full">
+                {dashboardHref ? t("nav.dashboard") : t("action.signIn")}
               </ButtonLink>
             </li>
           </ul>
